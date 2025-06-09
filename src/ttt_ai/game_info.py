@@ -1,15 +1,29 @@
 import sys
 from pathlib import Path
+from time import sleep
 from typing import Optional
+import threading
 
 import pyautogui
 from numpy import random
+from numpy.f2py.auxfuncs import throw_error
 
 # Add the current directory to a path for imports
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 from window_screenshotter import WindowScreenshotter
+
+from enum import Enum
+
+
+class GameState(Enum):
+    INIT = 0
+    PLAY_AGAIN = 1
+    YOUR_TURN = 2
+    WIN = 3
+    LOSE = 4
+    DRAW = 5
 
 
 class GameInfo:
@@ -22,7 +36,9 @@ class GameInfo:
         self.resources_dir.mkdir(parents=True, exist_ok=True)
         self.screenshotter = WindowScreenshotter("Fluent Tic-Tac-Toe")
         self.field_locations = []
-
+        self._previous_game_state = GameState.INIT
+        self.actual_game_state = GameState.INIT
+        self._state_lock = threading.Lock()
         # Initialize image paths for next game indicators
         indicate_next_game_image_files: list[str] = [
             "indicate_StartPlay.png",
@@ -48,6 +64,14 @@ class GameInfo:
         self.check_block_o_path = str(self.resources_dir / "indicate_Block_O.png")
         self.check_block_x_path = str(self.resources_dir / "indicate_Block_X.png")
 
+    def get_previous_game_state(self) -> GameState:
+        """
+        Returns the previous game state.
+        Returns:
+            GameState: The previous game state.
+        """
+        return self._previous_game_state
+
     def is_go_back_clicked(self) -> bool:
         """
         Checks if the go back button is clicked.
@@ -67,9 +91,11 @@ class GameInfo:
         Returns:
             bool: True if the indicator is visible, False otherwise.
         """
-        location = self.screenshotter.get_image_in_screen_location(self.check_draw_path)
-        if location is not None:
-            return True
+        if self._previous_game_state != GameState.LOSE:
+            location = self.screenshotter.get_image_in_screen_location(self.check_draw_path)
+            if location is not None:
+                self._switch_game_state(GameState.DRAW)
+                return True
         return False
 
     def is_lose_shown(self) -> bool:
@@ -78,9 +104,11 @@ class GameInfo:
         Returns:
             bool: True if the indicator is visible, False otherwise.
         """
-        location = self.screenshotter.get_image_in_screen_location(self.check_lose_path)
-        if location is not None:
-            return True
+        if self._previous_game_state != GameState.LOSE:
+            location = self.screenshotter.get_image_in_screen_location(self.check_lose_path)
+            if location is not None:
+                self._switch_game_state(GameState.LOSE)
+                return True
         return False
 
     def is_win_shown(self) -> bool:
@@ -89,9 +117,11 @@ class GameInfo:
         Returns:
             bool: True if the indicator is visible, False otherwise.
         """
-        location = self.screenshotter.get_image_in_screen_location(self.check_win_path)
-        if location is not None:
-            return True
+        if self._previous_game_state != GameState.WIN:
+            location = self.screenshotter.get_image_in_screen_location(self.check_win_path)
+            if location is not None:
+                self._switch_game_state(GameState.WIN)
+                return True
         return False
 
     def is_your_turn_shown(self) -> bool:
@@ -104,6 +134,7 @@ class GameInfo:
             self.check_your_turn_path
         )
         if location is not None:
+            self._switch_game_state(GameState.YOUR_TURN)
             return True
         return False
 
@@ -123,7 +154,7 @@ class GameInfo:
                 if len(self.field_locations) == 9:
                     self._click_at_location(
                         self.field_locations[
-                            random.randint(0, len(self.field_locations) - 1)
+                            random.randint(0, len(self.field_locations))
                         ]
                     )
                     return True
@@ -131,6 +162,23 @@ class GameInfo:
         except Exception as e:
             print(e)
             return False
+
+    def click_random_clear_block(self) -> bool:
+        """
+        Clicks a random clear block if available.
+        Returns:
+            bool: True if the indicator is visible, False otherwise.
+        """
+        list_of_field_locations = self.screenshotter.get_locations_of_image(
+            self.check_block_clear_path
+        )
+        if len(list_of_field_locations) > 0:
+            location = list_of_field_locations[random.randint(0, list_of_field_locations.__len__())]
+
+            if location is not None:
+                return self._click_at_location(location)
+
+        return False
 
     def start_next_game(self) -> bool:
         """
@@ -142,23 +190,50 @@ class GameInfo:
         if location is not None:
             if self._click_at_location(location):
                 self._reset_field_locations()
+                self._switch_game_state(GameState.INIT)
+                sleep(0.3)  # Wait for the game to reset
             return True
         return False
 
+    def move_mouse_to_save_location(self) -> bool:
+        """
+        Moves the mouse to a random location within the window area.
+        Returns:
+            bool: True if the move was successful, False otherwise.
+        """
+        try:
+            return self._move_to_location(
+                pyautogui.Point(
+                    random.randint(
+                        self.screenshotter.window.right - 100,
+                        self.screenshotter.window.right - 50,
+                    ),
+                    random.randint(
+                        self.screenshotter.window.bottom - 100,
+                        self.screenshotter.window.bottom - 50,
+                    ),
+                )
+            )
+        except Exception as e:
+            print(f"Error moving mouse to save location: {e}")
+            return False
+
+    def _switch_game_state(self, new_state: GameState) -> bool:
+        with self._state_lock:
+            if new_state != self._previous_game_state:
+                print(f"PRE Game state changed p: {self._previous_game_state} a: {self.actual_game_state.name}")
+                self._previous_game_state = self.actual_game_state
+                self.actual_game_state = new_state
+                print(f"Game state changed from {self._previous_game_state} to: {self.actual_game_state.name}")
+                return True
+            print(f"Game state NOT changed from {self._previous_game_state} to: {self.actual_game_state.name}")
+            return False
+
     def _reset_field_locations(self):
         try:
-            if self.field_locations == [] and self._move_to_location(
-                    pyautogui.Point(
-                        random.randint(
-                            self.screenshotter.window.right - 100,
-                            self.screenshotter.window.right - 50,
-                        ),
-                        random.randint(
-                            self.screenshotter.window.bottom - 100,
-                            self.screenshotter.window.bottom - 50,
-                        ),
-                    )
-            ):
+            if self.field_locations == [] and self.move_mouse_to_save_location():
+                pyautogui.click()
+                sleep(0.3)
 
                 list_of_field_locations = self.screenshotter.get_locations_of_image(
                     self.check_block_clear_path
@@ -168,6 +243,9 @@ class GameInfo:
                     self.field_locations = []
                     for location in list_of_field_locations:
                         self.field_locations.append(location)
+                    print("Done resetting field locations." + str(self.field_locations))
+                else:
+                    throw_error("Not all field locations found.")
 
         except Exception as e:
             print(f"Error resetting field locations: {e}")
@@ -201,7 +279,9 @@ class GameInfo:
             bool: True if click was successful, False otherwise.
         """
         try:
-            pyautogui.moveTo(location.x, location.y, self.mouse_speed)
+            pyautogui.moveTo(random.randint(location.x - 20, location.x + 20),
+                             random.randint(location.y - 20, location.y + 20), self.mouse_speed)
+            # sleep(0.2)
             return True
         except Exception as e:
             print(f"Error moving mouse: {e}")

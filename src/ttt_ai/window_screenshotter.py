@@ -128,7 +128,7 @@ class WindowScreenshotter:
             if not self.activate_window():
                 return None
             return pyautogui.locateCenterOnScreen(
-                search_image_path, confidence=0.95, region=self.window_region
+                search_image_path, confidence=0.99, region=self.window_region
             )
         except Exception:
             return None
