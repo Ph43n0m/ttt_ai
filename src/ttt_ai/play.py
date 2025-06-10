@@ -31,11 +31,15 @@ class Play:
         self.listener.start()
 
         # Start the main loop in a separate thread
-        self.game_info.is_go_back_clicked()
-        self.game_info.move_mouse_to_save_location()
-        self.thread = threading.Thread(target=self._loop)
-        self.thread.daemon = True
-        self.thread.start()
+        if self.game_info.screenshotter.find_window() is True:
+            self.game_info.is_go_back_clicked()
+            self.game_info.move_mouse_to_save_location()
+            self.thread = threading.Thread(target=self._loop)
+            self.thread.daemon = True
+            self.thread.start()
+        else:
+            print("Window not found. Please ensure the game window is open.")
+            self.stop()
 
     def _on_hotkey(self):
         """Callback when Ctrl+X is pressed."""
