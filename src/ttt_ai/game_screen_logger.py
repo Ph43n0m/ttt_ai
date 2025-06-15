@@ -26,8 +26,8 @@ class GameScreenLogger:
 
     def start(self):
         """Start the hotkey listener and the screenshot loop."""
-        # Register global hotkey for Ctrl+X
-        self.listener = keyboard.GlobalHotKeys({"<ctrl>+x": self._on_hotkey})
+        # Register global hotkey for Ctrl+Q
+        self.listener = keyboard.GlobalHotKeys({"<ctrl>+q": self._on_hotkey})
         self.listener.start()
 
         # Start the main loop in a separate thread
@@ -36,8 +36,8 @@ class GameScreenLogger:
         self.thread.start()
 
     def _on_hotkey(self):
-        """Callback when Ctrl+X is pressed."""
-        print("Ctrl+X detected. Stopping loop.")
+        """Callback when Ctrl+Q is pressed."""
+        print("Ctrl+Q detected. Stopping loop.")
         self.stop_flag = True
 
     def stop(self):
@@ -49,7 +49,7 @@ class GameScreenLogger:
 
     def _loop(self):
         """Main loop: take a screenshot every 300ms until stopped."""
-        print("Starting GameScreenLogger. Press Ctrl+X to stop.")
+        print("Starting GameScreenLogger. Press Ctrl+C to stop.")
         while not self.stop_flag:
             if self.screenshotter.find_window():
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
