@@ -10,12 +10,15 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 from game_info import GameInfo
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 class Play:
     def __init__(self, maximum_games: int = 10):
         self.thread = None
         self.listener = None
-        self.check_speed = 0.3
+        self.check_speed = 0.2
         self.game_info = GameInfo(0.2)
         self.stop_event = threading.Event()
         self.game_count = 0
@@ -26,8 +29,8 @@ class Play:
 
     def start(self):
         """Start the hotkey listener and the screenshot loop."""
-        # Register global hotkey for Ctrl+X
-        self.listener = keyboard.GlobalHotKeys({"<ctrl>+x": self._on_hotkey})
+        # Register global hotkey for Ctrl+Q
+        self.listener = keyboard.GlobalHotKeys({"<ctrl>+q": self._on_hotkey})
         self.listener.start()
 
         # Start the main loop in a separate thread
@@ -42,9 +45,9 @@ class Play:
             self.stop()
 
     def _on_hotkey(self):
-        """Callback when Ctrl+X is pressed."""
-        print("Ctrl+X detected. Stopping loop.")
-        self.stop_event.set()
+        """Callback when Ctrl+Q is pressed."""
+        print("Ctrl+Q detected. Stopping loop.")
+        self.stop()
 
     def stop(self):
         """Stop the loop and the hotkey listener."""
@@ -56,21 +59,34 @@ class Play:
 
     def _get_wl_ratio(self) -> float:
         """Calculate the win/loss ration."""
-        return self.games_won / (self.games_won + self.games_lost) if (self.games_won + self.games_lost) > 0 else float(
-            0)
+        if self.games_won < 0 or self.games_lost < 0:
+            print("Invalid game count or games lost. Returning 0.0 for win/loss ratio.")
+            return float(0)
+
+        return (
+            self.games_won / self.games_lost
+            if self.games_lost > 0
+            else float(self.games_won)
+        )
 
     def _get_win_rate(self) -> float:
         """Calculate the win rate."""
+
+        if self.games_won < 0 or self.game_count < 0:
+            print("Invalid game count or games won. Returning 0.0 for win rate.")
+            return float(0)
+
         return self.games_won / self.game_count if self.game_count > 0 else float(0)
 
     def _loop(self):
-        print("Starting Game. Press Ctrl+X to stop.")
+        print("Starting Game. Press Ctrl+Q to stop.")
 
         try:
             while not self.stop_event.is_set():
 
                 if self.game_info.is_click_square_shown():
                     print("Click any square to start the next round.")
+                    self.game_info.move_mouse_to_save_location()
 
                 if self.game_info.is_win_shown():
                     print("You won!")
@@ -85,24 +101,31 @@ class Play:
                     self.games_draw += 1
 
                 if self.game_info.start_next_game():
-                    self.game_count += 1
-                    self.game_info.move_mouse_to_save_location()
-
-                    if self.game_count > self.maximum_games:
+                    if self.game_count >= self.maximum_games:
                         self.stop_event.set()  # Stop the loop if maximum games reached.
-                        sleep(0.1)
+                        sleep(self.check_speed)
+                        # self.game_count = self.maximum_games
                         continue
 
+                    self.game_count += 1
                     print(
                         f"Game {self.game_count} of {self.maximum_games} has been started."
                     )
 
                 if self.game_info.is_your_turn_shown():
                     print(f"Your turn. Game {self.game_count} of {self.maximum_games}")
-                    self._do_random_field_click()
-                    self.game_info.move_mouse_to_save_location()
+
+                    print("Printing board state before click.")
+                    self.game_info.board.print_board()
+
+                    if self.game_info.click_random_clear_block():
+                        self.game_info.move_mouse_to_save_location()
+                        self.game_info.update_board_information()
+                        print("Printing board state after click.")
+                        self.game_info.board.print_board()
 
                 self._print_game_stats()
+
                 sleep(self.check_speed)
 
         except Exception as e:
@@ -110,30 +133,70 @@ class Play:
         finally:
             print("Game stopped.")
             self._print_game_stats()
+            self.game_info.board.print_board()
             self.game_info.is_go_back_clicked()
-
-    def _do_random_field_click(self) -> bool:
-        return self.game_info.click_random_clear_block()
 
     def _print_game_stats(self):
         """Print the game statistics."""
         print("Game statistics:")
         print(
-            f"Game ({self.game_info.get_previous_game_state()} --> {self.game_info.actual_game_state}) - ({self.game_count}/{self.maximum_games})\nW: {self.games_won} | L: {self.games_lost} | D: {self.games_draw}")
-        print("Win/Loss ratio: {:.2f}".format(self._get_wl_ratio()))
-        print("Win rate: {:.2f}".format(self._get_win_rate()))
+            f"Game ({self.game_info.get_previous_game_state()} --> {self.game_info.actual_game_state}) - ({self.game_count}/{self.maximum_games})\nW: {self.games_won} | L: {self.games_lost} | D: {self.games_draw}"
+        )
+        if self.game_count > 0:
+            print("Win/Loss ratio: {:.2f}".format(self._get_wl_ratio()))
+            print("Win rate: {:.2f}".format(self._get_win_rate()))
 
 
 def main():
     """Main entry point for the application."""
-    play_loop = Play(5)
+    play_loop = Play(2)
     play_loop.start()
+    # play_loop.stop()
     try:
         while not play_loop.stop_event.is_set():
-            sleep(0.3)
+            sleep(play_loop.check_speed)
+
     except KeyboardInterrupt:
         print("Interrupted by user. Exiting...")
         play_loop.stop()
+
+    filenametosaveplot = str(
+        play_loop.game_info.screenshotter.screens_dir
+        / f"{play_loop.game_info.screenshotter.window_title}_result.png".replace(
+            " ", "_"
+        ).replace(":", "_")
+    )
+    # X axis parameter:
+    # xaxis = np.array([1, 2, 4, 16, 32])
+    # Y axis parameter:
+    # yaxis = np.array([1, 2, 3, 4, 5])
+    # plt.plot(xaxis, yaxis)
+    # plt.show()
+
+    t = np.array(
+        [
+            [0, 0, 0, 0],
+            [1, 1, 0, 0],
+            [2, 2, 0, 0],
+            [3, 2, 1, 0],
+            [4, 2, 1, 1],
+            [5, 2, 2, 1],
+            [6, 2, 2, 2],
+            [7, 2, 3, 2],
+            [8, 3, 3, 2],
+            [9, 3, 4, 2],
+            [10, 3, 4, 2],
+        ]
+    )
+
+    plt.style.use("dark_background")
+    plt.plot(t[:, 0], t[:, 1], ls="dashed", color="chartreuse", label="Games won")
+    plt.plot(t[:, 0], t[:, 2], ls="dashed", color="OrangeRed", label="Games lost")
+    plt.plot(t[:, 0], t[:, 3], ls="dotted", color="silver", label="Games draw")
+
+    plt.legend()
+    # plt.show()
+    # plt.savefig(filenametosaveplot)
 
 
 if __name__ == "__main__":
