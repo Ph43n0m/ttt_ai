@@ -5,6 +5,8 @@ from time import sleep
 
 from pynput import keyboard
 
+from ttt_ai.agent import MiniMaxAgent
+
 # Add current directory to path for imports
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
@@ -18,8 +20,9 @@ class Play:
     def __init__(self, maximum_games: int = 10):
         self.thread = None
         self.listener = None
-        self.check_speed = 0.2
+        self.check_speed = 0.1
         self.game_info = GameInfo(0.2)
+        self.agent = MiniMaxAgent()
         self.stop_event = threading.Event()
         self.game_count = 0
         self.maximum_games = maximum_games
@@ -91,14 +94,17 @@ class Play:
                 if self.game_info.is_win_shown():
                     print("You won!")
                     self.games_won += 1
+                    self.agent.reward += 2
 
                 if self.game_info.is_lose_shown():
                     print("You lost.")
                     self.games_lost += 1
+                    self.agent.reward -= 1
 
                 if self.game_info.is_draw_shown():
                     print("Draw.")
                     self.games_draw += 1
+                    self.agent.reward += 1
 
                 if self.game_info.start_next_game():
                     if self.game_count >= self.maximum_games:
@@ -118,11 +124,18 @@ class Play:
                     print("Printing board state before click.")
                     self.game_info.board.print_board()
 
-                    if self.game_info.click_random_clear_block():
-                        self.game_info.move_mouse_to_save_location()
-                        self.game_info.update_board_information()
-                        print("Printing board state after click.")
-                        self.game_info.board.print_board()
+                    # Get the best move from the minimax agent
+                    best_move = self.agent.get_best_move(self.game_info.board)
+                    if best_move is not None:
+                        field_to_click = self.game_info.board.get_field_by_flat_index(
+                            best_move
+                        )
+                        if field_to_click is not None:
+                            if self.game_info.click_at_field(field_to_click):
+                                self.game_info.move_mouse_to_save_location()
+                                self.game_info.update_board_information()
+                                print("Printing board state after click.")
+                                self.game_info.board.print_board()
 
                 self._print_game_stats()
 
@@ -145,11 +158,12 @@ class Play:
         if self.game_count > 0:
             print("Win/Loss ratio: {:.2f}".format(self._get_wl_ratio()))
             print("Win rate: {:.2f}".format(self._get_win_rate()))
+            print("Agent Reward: ", self.agent.reward)
 
 
 def main():
     """Main entry point for the application."""
-    play_loop = Play(2)
+    play_loop = Play(100)
     play_loop.start()
     # play_loop.stop()
     try:

@@ -1,10 +1,10 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 from pyautogui import Point
 
 
-class FieldState(Enum):
+class FieldState(StrEnum):
     EMPTY = "-"
     X = "X"
     O = "O"
