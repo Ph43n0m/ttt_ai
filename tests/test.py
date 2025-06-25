@@ -24,6 +24,13 @@ class PlayTests:
         unittest.TextTestRunner(verbosity=2).run(suite)
 
 
+class AgentTests:
+    @staticmethod
+    def run():
+        suite = unittest.TestLoader().loadTestsFromModule(__import__("test_agent"))
+        unittest.TextTestRunner(verbosity=2).run(suite)
+
+
 if __name__ == "__main__":
     # Run all tests by default
     AllTests.run()

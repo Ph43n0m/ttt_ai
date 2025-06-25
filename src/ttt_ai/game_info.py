@@ -2,7 +2,7 @@ import sys
 import threading
 from pathlib import Path
 from time import sleep
-from typing import Optional
+from typing import Optional, overload
 
 import pyautogui
 from numpy import random
@@ -55,6 +55,16 @@ class GameInfo:
             str(self.resources_dir / filename)
             for filename in indicate_next_game_image_files
         ]
+
+        self.check_block_o_path = str(self.resources_dir / "indicate_Block_O.png")
+        self.check_block_o_win_path = str(
+            self.resources_dir / "indicate_Block_O_Win.png"
+        )
+        self.check_block_x_path = str(self.resources_dir / "indicate_Block_X.png")
+        self.check_block_x_win_path = str(
+            self.resources_dir / "indicate_Block_X_Win.png"
+        )
+
         self.check_click_square_path = str(
             self.resources_dir / "indicate_ClickSquareToStart.png"
         )
@@ -66,8 +76,6 @@ class GameInfo:
         self.check_block_clear_path = str(
             self.resources_dir / "indicate_Block_Clear.png"
         )
-        self.check_block_o_path = str(self.resources_dir / "indicate_Block_O.png")
-        self.check_block_x_path = str(self.resources_dir / "indicate_Block_X.png")
 
     def get_previous_game_state(self) -> GameState:
         """
@@ -146,7 +154,8 @@ class GameInfo:
         )
         if location is not None:
             self._switch_game_state(
-                GameState.YOUR_TURN)  # be carefully to not use it "strict" as return value because this state will be able to be Your Turn before
+                GameState.YOUR_TURN
+            )  # be carefully to not use it "strict" as return value because this state will be able to be Your Turn before
             return self.update_board_information()
         return False
 
@@ -192,11 +201,15 @@ class GameInfo:
 
     def get_o_block_locations(self) -> list[pyautogui.Point]:
         """Retrieves the locations of all 'O' blocks on the board."""
-        return self.screenshotter.get_locations_of_image(self.check_block_o_path)
+        return self.screenshotter.get_locations_of_image(
+            self.check_block_o_path
+        ) + self.screenshotter.get_locations_of_image(self.check_block_o_win_path)
 
     def get_x_block_locations(self) -> list[pyautogui.Point]:
         """Retrieves the locations of all 'X' blocks on the board."""
-        return self.screenshotter.get_locations_of_image(self.check_block_x_path)
+        return self.screenshotter.get_locations_of_image(
+            self.check_block_x_path
+        ) + self.screenshotter.get_locations_of_image(self.check_block_x_win_path)
 
     def start_next_game(self) -> bool:
         """
@@ -276,8 +289,8 @@ class GameInfo:
                     print(f"X Blocks found: {len(list_of_field_positions_x)}")
 
                     # Update the board with the current field locations
-                    for row in range(3):
-                        for col in range(3):
+                    for row in range(self.board.BOARD_SIZE):
+                        for col in range(self.board.BOARD_SIZE):
                             field_location = self.board.fields[row][col].location
                             if field_location in list_of_field_positions_clear:
                                 self.board.fields[row][col].state = FieldState.EMPTY
@@ -332,9 +345,12 @@ class GameInfo:
             print(f"Error resetting field locations: {e}")
         return False
 
+    def click_at_field(self, location: Field, sleep_time: float = 0, uuu=0) -> bool:
+        return self._click_at_location(location.location, sleep_time)
+
     def _click_at_location(
             self, location: pyautogui.Point, sleep_time: float = 0
-    ) -> bool:
+    ) -> bool:  # TODO: needs refactoring to an controller class
         """
         Moves the mouse to specified location and performs a click.
 
@@ -343,6 +359,8 @@ class GameInfo:
 
         Returns:
             bool: True if click was successful, False otherwise.
+            :param location: The point coordinates to click at.
+            :param sleep_time: time to wait after clicking, default is 0 seconds.
         """
         ret = False
         try:
