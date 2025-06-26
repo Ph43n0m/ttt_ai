@@ -5,7 +5,7 @@ from time import sleep
 
 from pynput import keyboard
 
-from ttt_ai.agent import MiniMaxAgent
+from ttt_ai.agent import Agent, MiniMaxAgent
 
 # Add current directory to path for imports
 current_dir = Path(__file__).parent
@@ -16,19 +16,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class Play:
-    def __init__(self, maximum_games: int = 10):
+class PlayRealGame:
+    def __init__(self, agent: Agent, maximum_games: int = 10):
         self.thread = None
         self.listener = None
         self.check_speed = 0.1
         self.game_info = GameInfo(0.2)
-        self.agent = MiniMaxAgent()
+        self.agent = agent
         self.stop_event = threading.Event()
         self.game_count = 0
         self.maximum_games = maximum_games
-        self.games_won = 0
-        self.games_lost = 0
-        self.games_draw = 0
 
     def start(self):
         """Start the hotkey listener and the screenshot loop."""
@@ -60,27 +57,6 @@ class Play:
         if self.thread is not None and self.thread.is_alive():
             self.thread.join()
 
-    def _get_wl_ratio(self) -> float:
-        """Calculate the win/loss ration."""
-        if self.games_won < 0 or self.games_lost < 0:
-            print("Invalid game count or games lost. Returning 0.0 for win/loss ratio.")
-            return float(0)
-
-        return (
-            self.games_won / self.games_lost
-            if self.games_lost > 0
-            else float(self.games_won)
-        )
-
-    def _get_win_rate(self) -> float:
-        """Calculate the win rate."""
-
-        if self.games_won < 0 or self.game_count < 0:
-            print("Invalid game count or games won. Returning 0.0 for win rate.")
-            return float(0)
-
-        return self.games_won / self.game_count if self.game_count > 0 else float(0)
-
     def _loop(self):
         print("Starting Game. Press Ctrl+Q to stop.")
 
@@ -93,18 +69,15 @@ class Play:
 
                 if self.game_info.is_win_shown():
                     print("You won!")
-                    self.games_won += 1
-                    self.agent.reward += 2
+                    self.agent.update(True)
 
                 if self.game_info.is_lose_shown():
                     print("You lost.")
-                    self.games_lost += 1
-                    self.agent.reward -= 1
+                    self.agent.update(False, True)
 
                 if self.game_info.is_draw_shown():
                     print("Draw.")
-                    self.games_draw += 1
-                    self.agent.reward += 1
+                    self.agent.update(False, False, True)
 
                 if self.game_info.start_next_game():
                     if self.game_count >= self.maximum_games:
@@ -153,17 +126,17 @@ class Play:
         """Print the game statistics."""
         print("Game statistics:")
         print(
-            f"Game ({self.game_info.get_previous_game_state()} --> {self.game_info.actual_game_state}) - ({self.game_count}/{self.maximum_games})\nW: {self.games_won} | L: {self.games_lost} | D: {self.games_draw}"
+            f"Game ({self.game_info.get_previous_game_state()} --> {self.game_info.actual_game_state}) - ({self.game_count}/{self.maximum_games})\nW: {self.agent.games_won} | L: {self.agent.games_lost} | D: {self.agent.games_draw}"
         )
         if self.game_count > 0:
-            print("Win/Loss ratio: {:.2f}".format(self._get_wl_ratio()))
-            print("Win rate: {:.2f}".format(self._get_win_rate()))
+            print("Win/Loss ratio: {:.2f}".format(self.agent.get_wl_ratio()))
+            print("Win rate: {:.2f}".format(self.agent.get_win_rate()))
             print("Agent Reward: ", self.agent.reward)
 
 
 def main():
     """Main entry point for the application."""
-    play_loop = Play(100)
+    play_loop = PlayRealGame(MiniMaxAgent(), 100)
     play_loop.start()
     # play_loop.stop()
     try:

@@ -1,4 +1,6 @@
+import random
 from dataclasses import dataclass
+from typing import Any
 
 from ttt_ai.field import Field, FieldState
 
@@ -19,6 +21,30 @@ class Board:
     def __getitem__(self, key):
         row, col = key
         return self.fields[row][col]
+
+    def reset(self):
+        """
+        Reset the board to its initial state with all fields empty.
+        """
+        for row in range(self.BOARD_SIZE):
+            for col in range(self.BOARD_SIZE):
+                self.fields[row][col].state = FieldState.EMPTY
+
+    def get_flat_index_of_radom_free_field(self) -> int | None:
+        """
+        Get the index of a random free field in the flattened board.
+        Returns:
+            int: The index of a random free field, or None if no free fields are available.
+        """
+        free_fields = [
+            self.get_flat_index(row, col)
+            for row in range(self.BOARD_SIZE)
+            for col in range(self.BOARD_SIZE)
+            if self.fields[row][col].state == FieldState.EMPTY
+        ]
+        if not free_fields:
+            return None
+        return random.choice(free_fields)
 
     def get_flat_index(self, row: int, col: int) -> int:
         """

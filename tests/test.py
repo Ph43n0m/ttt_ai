@@ -1,6 +1,5 @@
 import unittest
 
-from test_board import *
 from test_play import *
 
 

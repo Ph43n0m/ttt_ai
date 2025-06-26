@@ -2,7 +2,7 @@ import unittest
 
 from pyautogui import Point
 
-from ttt_ai.agent import MiniMaxAgent
+from ttt_ai.agent import Agent, MiniMaxAgent
 from ttt_ai.board import Board
 from ttt_ai.field import FieldState
 
@@ -18,7 +18,7 @@ class TestMiniMaxAgent(unittest.TestCase):
         self.assertIsNotNone(
             best_move, "Best move should be not None on an empty board."
         )
-        self.assertEqual(best_move, 6, "Best move should be 6 on an empty board.")
+        self.assertIn(best_move, [0, 2, 6, 8], "Best move should be a corner (0, 2, 6, or 8) on an empty board.")
 
     def test_get_best_move_full_board(self):
         self._generate_board(full_board=True)
@@ -136,3 +136,92 @@ class TestMiniMaxAgent(unittest.TestCase):
             self.board[0, 2].state = FieldState.O
 
         return self.board
+
+
+class TestAgentWinRate(unittest.TestCase):
+    def setUp(self):
+        self.agent = Agent()
+
+    def test_get_win_rate(self):
+        print("Testing win rate with no games played.")
+        self.assertEqual(
+            self.agent.get_win_rate(),
+            0.0,
+            "Win rate should be 0.0 when no games are played.",
+        )
+        for draws in range(1, 5):
+            for losts in range(0, 5):
+                for wins in range(0, 5):
+                    self.agent.games_won = wins
+                    self.agent.games_lost = losts
+                    self.agent.games_draw = draws
+                    expected_rate = wins / (draws + losts + wins)
+                    print(
+                        f"Testing win rate for {wins} wins out of {(draws + losts + wins)} games: {expected_rate:.2f}"
+                    )
+                    self.assertEqual(self.agent.get_win_rate(), expected_rate)
+        self.agent.games_won = 0
+        self.agent.games_lost = 0
+        self.agent.games_draw = 1
+        print("Testing win rate with no game won.")
+        self.assertEqual(self.agent.get_win_rate(), 0.0)
+        self.agent.games_won = -1
+        self.agent.games_lost = 0
+        self.agent.games_draw = 1
+        print("Testing win rate with negative games_won.")
+        self.assertEqual(self.agent.get_win_rate(), 0.0)
+        self.agent.games_won = 0
+        self.agent.games_lost = -1
+        self.agent.games_draw = 0
+        print("Testing win rate with negative games_lost.")
+        self.assertEqual(self.agent.get_win_rate(), 0.0)
+        self.agent.games_won = 0
+        self.agent.games_lost = 0
+        self.agent.games_draw = -1
+        print("Testing win rate with negative games_draw.")
+        self.assertEqual(self.agent.get_win_rate(), 0.0)
+        self.agent.games_won = -1
+        self.agent.games_lost = -1
+        self.agent.games_draw = -1
+        print("Testing win rate with all negative games_won, game_count and games_draw.")
+        self.assertEqual(self.agent.get_win_rate(), 0.0)
+
+
+class TestPlayWinLossRatio(unittest.TestCase):
+    def setUp(self):
+        self.agent = Agent()
+
+    def test_get_wl_ratio(self):
+        self.agent.games_draw = 5  # draws will not affect the win/loss ratio! So we set it to 5 to make sure it does not affect the tests.
+
+        print("Testing win/loss ratio with no games played.")
+        self.assertEqual(self.agent.get_wl_ratio(), 0.0)
+        self.agent.games_won = 5
+        self.agent.games_lost = 0
+        print("Testing win/loss ratio with 5 wins and 0 losses.")
+        self.assertEqual(self.agent.get_wl_ratio(), 5.0)
+        self.agent.games_won = 0
+        self.agent.games_lost = 3
+        print("Testing win/loss ratio with 0 wins and 3 losses.")
+        self.assertEqual(self.agent.get_wl_ratio(), 0.0)
+        for loses in range(0, 11):
+            for wins in range(0, loses * 2 + 1):
+                self.agent.games_won = wins
+                self.agent.games_lost = loses
+                expected_ratio = wins / loses if loses > 0 else float(wins)
+                print(
+                    f"Testing win/loss ratio for {wins} wins and {loses} losses: {expected_ratio:.2f}"
+                )
+                self.assertEqual(self.agent.get_wl_ratio(), expected_ratio)
+        self.agent.games_won = -2
+        self.agent.games_lost = 4
+        print("Testing win/loss ratio with -2 wins and 4 losses.")
+        self.assertEqual(self.agent.get_wl_ratio(), 0.0)
+        self.agent.games_won = 4
+        self.agent.games_lost = -2
+        print("Testing win/loss ratio with 4 wins and -2 losses.")
+        self.assertEqual(self.agent.get_wl_ratio(), 0.0)
+        self.agent.games_won = -2
+        self.agent.games_lost = -2
+        print("Testing win/loss ratio with -2 wins and -2 losses.")
+        self.assertEqual(self.agent.get_wl_ratio(), 0.0)

@@ -296,5 +296,67 @@ class TestBoardGetFieldByFlatIndex(unittest.TestCase):
             board.get_field_by_flat_index("a")
 
 
-if __name__ == "__main__":
-    unittest.main()
+class TestBoardResetBoard(unittest.TestCase):
+    def test_reset_board_all_x(self):
+        board = Board()
+        for row in range(board.BOARD_SIZE):
+            for col in range(board.BOARD_SIZE):
+                board[row, col].state = FieldState.X
+        board.reset()
+        for row in range(board.BOARD_SIZE):
+            for col in range(board.BOARD_SIZE):
+                self.assertEqual(board[row, col].state, FieldState.EMPTY)
+
+    def test_reset_board_partial(self):
+        board = Board()
+        board[0, 0].state = FieldState.X
+        board[1, 1].state = FieldState.O
+        board.reset()
+        for row in range(board.BOARD_SIZE):
+            for col in range(board.BOARD_SIZE):
+                self.assertEqual(board[row, col].state, FieldState.EMPTY)
+
+    def test_reset_board_already_empty(self):
+        board = Board()
+        board.reset()
+        for row in range(board.BOARD_SIZE):
+            for col in range(board.BOARD_SIZE):
+                self.assertEqual(board[row, col].state, FieldState.EMPTY)
+
+
+class TestBoardGetFlatIndexOfRandomFreeField(unittest.TestCase):
+    def test_get_flat_index_of_random_free_field_all_free(self):
+        board = Board()
+        indices = set()
+        for _ in range(100):
+            idx = board.get_flat_index_of_radom_free_field()
+            self.assertIsInstance(idx, int)
+            self.assertGreaterEqual(idx, 0)
+            self.assertLess(idx, board.BOARD_SIZE * board.BOARD_SIZE)
+            indices.add(idx)
+        self.assertEqual(len(indices), board.BOARD_SIZE * board.BOARD_SIZE)
+
+    def test_get_flat_index_of_random_free_field_some_filled(self):
+        board = Board()
+        board[0, 0].state = FieldState.X
+        board[1, 1].state = FieldState.O
+        free_indices = [
+            board.get_flat_index(row, col)
+            for row in range(board.BOARD_SIZE)
+            for col in range(board.BOARD_SIZE)
+            if board[row, col].state == FieldState.EMPTY
+        ]
+        for _ in range(50):
+            idx = board.get_flat_index_of_radom_free_field()
+            self.assertIn(idx, free_indices)
+
+    def test_get_flat_index_of_random_free_field_after_reset(self):
+        board = Board()
+        for row in range(board.BOARD_SIZE):
+            for col in range(board.BOARD_SIZE):
+                board[row, col].state = FieldState.X
+        board.reset()
+        idx = board.get_flat_index_of_radom_free_field()
+        self.assertIsInstance(idx, int)
+        self.assertGreaterEqual(idx, 0)
+        self.assertLess(idx, board.BOARD_SIZE * board.BOARD_SIZE)
