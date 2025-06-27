@@ -1,6 +1,5 @@
 import unittest
 
-from test_play import *
 
 
 class AllTests:

@@ -2,14 +2,15 @@ import unittest
 
 from pyautogui import Point
 
-from ttt_ai.agent import Agent, MiniMaxAgent
-from ttt_ai.board import Board
-from ttt_ai.field import FieldState
+from ttt_ai.game.agent.agent import Agent
+from ttt_ai.game.agent.minimax_agent import MiniMaxAgent
+from ttt_ai.game.board import Board
+from ttt_ai.game.field import FieldState
 
 
 class TestMiniMaxAgent(unittest.TestCase):
     def setUp(self):
-        self.agent = MiniMaxAgent()
+        self.agent = MiniMaxAgent(FieldState.X, 0)
         self.board = Board()
 
     def test_get_best_move_empty_board(self):
@@ -18,7 +19,11 @@ class TestMiniMaxAgent(unittest.TestCase):
         self.assertIsNotNone(
             best_move, "Best move should be not None on an empty board."
         )
-        self.assertIn(best_move, [0, 2, 6, 8], "Best move should be a corner (0, 2, 6, or 8) on an empty board.")
+        self.assertIn(
+            best_move,
+            [0, 2, 6, 8],
+            "Best move should be a corner (0, 2, 6, or 8) on an empty board.",
+        )
 
     def test_get_best_move_full_board(self):
         self._generate_board(full_board=True)
@@ -183,7 +188,9 @@ class TestAgentWinRate(unittest.TestCase):
         self.agent.games_won = -1
         self.agent.games_lost = -1
         self.agent.games_draw = -1
-        print("Testing win rate with all negative games_won, game_count and games_draw.")
+        print(
+            "Testing win rate with all negative games_won, game_count and games_draw."
+        )
         self.assertEqual(self.agent.get_win_rate(), 0.0)
 
 

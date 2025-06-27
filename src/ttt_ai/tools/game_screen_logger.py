@@ -10,7 +10,7 @@ from pynput import keyboard
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-from window_screenshotter import WindowScreenshotter
+from ttt_ai.tools.window_screenshotter import WindowScreenshotter
 
 
 class GameScreenLogger:
