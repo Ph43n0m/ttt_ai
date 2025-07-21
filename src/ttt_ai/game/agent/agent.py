@@ -10,7 +10,7 @@ LR = 0.001
 
 class Agent(ABC):
     def __init__(
-            self, field_state_type: FieldState = FieldState.X, randomness: float = 0.2
+            self, field_state_type: FieldState = FieldState.X, randomness: float = 0.1
     ):
         self.FIELD_STATE_TYPE = field_state_type
         self.games_won = 0

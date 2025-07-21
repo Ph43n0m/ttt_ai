@@ -7,7 +7,7 @@ from ttt_ai.game.agent.agent import Agent
 from ttt_ai.game.field import FieldState
 
 
-class NNAgent(Agent):
+class NNAgent_V2(Agent):
     """
     An agent that uses a neural network to play Tic Tac Toe.
     """
@@ -17,6 +17,7 @@ class NNAgent(Agent):
     ):
         super().__init__(field_state_type, randomness)
         self.model = NNModel()
+        # self.model = NNModel(randomness)
 
     def load_weights(self, path: str) -> None:
         """
@@ -73,6 +74,7 @@ class NNAgent(Agent):
                 scores = self.model(board_tensor)
                 # Get the index of the move with the highest score
             best_move = torch.argmax(scores).item()
+            # _, best_move = torch.max(scores.data, 1)
 
             # Check if the best move is valid
             if board[best_move // 3, best_move % 3].state == FieldState.EMPTY:
@@ -84,14 +86,30 @@ class NNAgent(Agent):
 
 # Define the neural network model
 class NNModel(nn.Module):
-    def __init__(self):
+
+    def __init__(self, randomness: float = 0.2):
         super(NNModel, self).__init__()
-        self.fc1 = nn.Linear(9, 128)  # Input layer
-        self.fc2 = nn.Linear(128, 64)  # Hidden layer
-        self.fc3 = nn.Linear(64, 9)  # Output layer
+        size = 9
+        layer_multiplier = 32
+        self.fc1 = nn.Linear(size, size * (layer_multiplier // 2))
+        self.fc2 = nn.Linear(size * (layer_multiplier // 2), size * layer_multiplier)
+        self.fc3 = nn.Linear(size * layer_multiplier, size * (layer_multiplier // 2))
+        self.fc4 = nn.Linear(size * (layer_multiplier // 2), size)
+
+        self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
+        self.softmax = nn.Softmax(dim=1)
+
+        # Dropout layers
+        self.dropout1 = nn.Dropout(p=randomness)
+        self.dropout2 = nn.Dropout(p=randomness)
+        self.dropout3 = nn.Dropout(p=randomness)
+        self.dropout4 = nn.Dropout(p=randomness)
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))  # Activation function for first layer
-        x = torch.relu(self.fc2(x))  # Activation function for second layer
-        x = self.fc3(x)  # Output layer
+        x = self.relu(self.fc1(x))
+        x = self.relu(self.fc2(x))
+        x = self.relu(self.fc3(x))
+        x = self.fc4(x)
+
         return x
