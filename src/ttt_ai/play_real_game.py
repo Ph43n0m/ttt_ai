@@ -5,13 +5,14 @@ from time import sleep
 
 from pynput import keyboard
 
-from ttt_ai.agent import Agent, MiniMaxAgent
+from ttt_ai.game.agent.agent import Agent
+from ttt_ai.game.agent.minimax_agent import MiniMaxAgent
 
 # Add current directory to path for imports
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-from game_info import GameInfo
+from ttt_ai.game.game_info import GameInfo
 import matplotlib.pyplot as plt
 import numpy as np
 

@@ -1,8 +1,7 @@
 import random
 from dataclasses import dataclass
-from typing import Any
 
-from ttt_ai.field import Field, FieldState
+from ttt_ai.game.field import Field, FieldState
 
 
 @dataclass
@@ -174,3 +173,12 @@ class Board:
         for row in self.fields:
             print(" | ".join(field.state.value for field in row))
             print("-" * 9)
+
+    def flatten(self):
+        """
+        Flatten the board into a 1D list of field states.
+        Returns:
+            list[FieldState]: A flattened list of field states.
+        """
+        state_map = {"-": 0, "X": 1, "O": 2}
+        return [state_map[field.state.value] for row in self.fields for field in row]

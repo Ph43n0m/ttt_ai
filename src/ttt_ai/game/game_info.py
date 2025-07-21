@@ -2,19 +2,19 @@ import sys
 import threading
 from pathlib import Path
 from time import sleep
-from typing import Optional, overload
+from typing import Optional
 
 import pyautogui
 from numpy import random
 
-from ttt_ai.board import Board
-from ttt_ai.field import Field, FieldState
+from ttt_ai.game.board import Board
+from ttt_ai.game.field import Field, FieldState
 
 # Add the current directory to a path for imports
 current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
-from window_screenshotter import WindowScreenshotter
+from ttt_ai.tools.window_screenshotter import WindowScreenshotter
 
 from enum import Enum
 
@@ -35,8 +35,9 @@ class GameInfo:
         self.start_next_game_sleep = 0.2
         project_root = Path(__file__).parent.parent.parent
         self.resources_dir = project_root / "assets" / "resources"
-        # Ensure 'resources' directories exist
         self.resources_dir.mkdir(parents=True, exist_ok=True)
+        self.resources_images_dir = self.resources_dir / "images"
+        self.resources_images_dir.mkdir(parents=True, exist_ok=True)
         self.screenshotter = WindowScreenshotter("Fluent Tic-Tac-Toe")
         # self.field_locations = []
         self._previous_game_state = GameState.INIT
@@ -52,29 +53,29 @@ class GameInfo:
         ]
 
         self.check_next_game_button_paths: list[str] = [
-            str(self.resources_dir / filename)
+            str(self.resources_images_dir / filename)
             for filename in indicate_next_game_image_files
         ]
 
-        self.check_block_o_path = str(self.resources_dir / "indicate_Block_O.png")
+        self.check_block_o_path = str(self.resources_images_dir / "indicate_Block_O.png")
         self.check_block_o_win_path = str(
-            self.resources_dir / "indicate_Block_O_Win.png"
+            self.resources_images_dir / "indicate_Block_O_Win.png"
         )
-        self.check_block_x_path = str(self.resources_dir / "indicate_Block_X.png")
+        self.check_block_x_path = str(self.resources_images_dir / "indicate_Block_X.png")
         self.check_block_x_win_path = str(
-            self.resources_dir / "indicate_Block_X_Win.png"
+            self.resources_images_dir / "indicate_Block_X_Win.png"
         )
 
         self.check_click_square_path = str(
-            self.resources_dir / "indicate_ClickSquareToStart.png"
+            self.resources_images_dir / "indicate_ClickSquareToStart.png"
         )
-        self.check_your_turn_path = str(self.resources_dir / "indicate_YourTurn.png")
-        self.check_go_back_path = str(self.resources_dir / "indicate_GoBack.png")
-        self.check_win_path = str(self.resources_dir / "indicate_Win.png")
-        self.check_lose_path = str(self.resources_dir / "indicate_Lost.png")
-        self.check_draw_path = str(self.resources_dir / "indicate_Draw.png")
+        self.check_your_turn_path = str(self.resources_images_dir / "indicate_YourTurn.png")
+        self.check_go_back_path = str(self.resources_images_dir / "indicate_GoBack.png")
+        self.check_win_path = str(self.resources_images_dir / "indicate_Win.png")
+        self.check_lose_path = str(self.resources_images_dir / "indicate_Lost.png")
+        self.check_draw_path = str(self.resources_images_dir / "indicate_Draw.png")
         self.check_block_clear_path = str(
-            self.resources_dir / "indicate_Block_Clear.png"
+            self.resources_images_dir / "indicate_Block_Clear.png"
         )
 
     def get_previous_game_state(self) -> GameState:

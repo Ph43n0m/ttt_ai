@@ -3,8 +3,8 @@ import random
 import sys
 import unittest
 
-from ttt_ai.board import Board
-from ttt_ai.field import FieldState
+from ttt_ai.game.board import Board
+from ttt_ai.game.field import FieldState
 
 
 class TestBoardPrint(unittest.TestCase):
