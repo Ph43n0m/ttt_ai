@@ -1,8 +1,9 @@
 from pathlib import Path
 
 from ttt_ai.game.agent.minimax_agent import MiniMaxAgent
-from ttt_ai.game.agent.nn_agent_v1 import NNAgent_V1
-from ttt_ai.game.agent.nn_agent_v2 import NNAgent_V2
+from ttt_ai.game.agent.model.NNModel_V1 import NNModel_V1
+from ttt_ai.game.agent.model.NNModel_V2 import NNModel_V2
+from ttt_ai.game.agent.nn_agent import NNAgent
 from ttt_ai.game.board import Board
 from ttt_ai.game.field import FieldState
 from ttt_ai.tools.plotter import plot
@@ -20,14 +21,15 @@ class PlayAgentGame:
         self.board = Board()
 
         for agent in self.agents:
-            if isinstance(agent, NNAgent_V1):
-                if not self.resource_model_file_v1.exists():
-                    agent.save_weights(str(self.resource_model_file_v1))
-                agent.load_weights(str(self.resource_model_file_v1))
-            elif isinstance(agent, NNAgent_V2):
-                if not self.resource_model_file_v2.exists():
-                    agent.save_weights(str(self.resource_model_file_v2))
-                agent.load_weights(str(self.resource_model_file_v2))
+            if isinstance(agent, NNAgent):
+                if isinstance(agent.model, NNModel_V1):
+                    if not self.resource_model_file_v1.exists():
+                        agent.save_weights(str(self.resource_model_file_v1))
+                    agent.load_weights(str(self.resource_model_file_v1))
+                elif isinstance(agent.model, NNModel_V2):
+                    if not self.resource_model_file_v2.exists():
+                        agent.save_weights(str(self.resource_model_file_v2))
+                    agent.load_weights(str(self.resource_model_file_v2))
 
     def start(self):
         plot_x_scores = []
@@ -71,12 +73,18 @@ class PlayAgentGame:
             self.board.print_board()
 
             for agent in self.agents:
-                agent.update(game_won=self.board.is_winner(agent.FIELD_STATE_TYPE),
-                             game_lost=not self.board.is_winner(agent.FIELD_STATE_TYPE), game_draw=(
-                            not self.board.is_winner(FieldState.X) and not self.board.is_winner(FieldState.O)))
+                agent.update(
+                    game_won=self.board.is_winner(agent.FIELD_STATE_TYPE),
+                    game_lost=not self.board.is_winner(agent.FIELD_STATE_TYPE),
+                    game_draw=(
+                            not self.board.is_winner(FieldState.X)
+                            and not self.board.is_winner(FieldState.O)
+                    ),
+                )
 
                 print(
-                    f"Game stats: {agent.FIELD_STATE_TYPE} won: {agent.games_won}, lost: {agent.games_lost}, draw: {agent.games_draw}, reward: {agent.reward}, wl_ratio: {agent.get_wl_ratio():.2f}, win_rate: {agent.get_win_rate():.2f}")
+                    f"Game stats: {agent.FIELD_STATE_TYPE} won: {agent.games_won}, lost: {agent.games_lost}, draw: {agent.games_draw}, reward: {agent.reward}, wl_ratio: {agent.get_wl_ratio():.2f}, win_rate: {agent.get_win_rate():.2f}"
+                )
 
             plot_x_scores.append(self.agents[0].reward)
             plot_o_scores.append(self.agents[1].reward)
@@ -93,17 +101,17 @@ class PlayAgentGame:
 
 def main():
     """Main entry point for the application."""
-    randomness = 0.1  # Set the randomness for the agents
+    randomness = 0.001  # Set the randomness for the agents
 
-    agent_x = MiniMaxAgent(FieldState.X, randomness)
-    # agent_x = NNAgent_V1(FieldState.X, randomness)
-    # agent_x = NNAgent_V2(FieldState.X, randomness)
+    # agent_x = MiniMaxAgent(FieldState.X, randomness)
+    # agent_x = NNAgent(NNModel_V1(), FieldState.X, randomness)
+    agent_x = NNAgent(NNModel_V2(), FieldState.X, randomness)
 
-    # agent_o = MiniMaxAgent(FieldState.X, randomness)
-    agent_o = NNAgent_V1(FieldState.O, randomness)
-    # agent_o = NNAgent_V2(FieldState.O, randomness)
+    # agent_o = MiniMaxAgent(FieldState.O, randomness)
+    agent_o = NNAgent(NNModel_V1(), FieldState.O, randomness)
+    # agent_o = NNAgent(NNModel_V2(), FieldState.O, randomness)
 
-    play_loop = PlayAgentGame([agent_x, agent_o], 100000)
+    play_loop = PlayAgentGame([agent_x, agent_o], 1000000)
     play_loop.start()
 
 

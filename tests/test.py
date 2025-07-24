@@ -1,7 +1,6 @@
 import unittest
 
 
-
 class AllTests:
     @staticmethod
     def run():

@@ -133,6 +133,18 @@ class Board:
             field.state != FieldState.EMPTY for row in self.fields for field in row
         )
 
+    def is_game_over(self) -> bool:
+        """
+        Check if the game is over (either a player has won or the board is full).
+        Returns:
+            bool: True if the game is over, False otherwise.
+        """
+        return (
+                self.is_board_full()
+                or self.is_winner(FieldState.X)
+                or self.is_winner(FieldState.O)
+        )
+
     def is_winner(self, player: FieldState) -> bool:
         """
         Check if the specified player has won.
