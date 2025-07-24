@@ -41,8 +41,8 @@ class MiniMaxAgent(Agent):
 
             if board.is_empty():
                 return random.choice(
-                    [0, 2, 6, 8]
-                )  # pick a random corner as the first move
+                    [0, 2, 8]
+                )  # pick a random corner as the first move except 6
 
             best_score = float("-inf")
             best_move = None

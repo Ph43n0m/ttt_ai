@@ -57,11 +57,15 @@ class GameInfo:
             for filename in indicate_next_game_image_files
         ]
 
-        self.check_block_o_path = str(self.resources_images_dir / "indicate_Block_O.png")
+        self.check_block_o_path = str(
+            self.resources_images_dir / "indicate_Block_O.png"
+        )
         self.check_block_o_win_path = str(
             self.resources_images_dir / "indicate_Block_O_Win.png"
         )
-        self.check_block_x_path = str(self.resources_images_dir / "indicate_Block_X.png")
+        self.check_block_x_path = str(
+            self.resources_images_dir / "indicate_Block_X.png"
+        )
         self.check_block_x_win_path = str(
             self.resources_images_dir / "indicate_Block_X_Win.png"
         )
@@ -69,7 +73,9 @@ class GameInfo:
         self.check_click_square_path = str(
             self.resources_images_dir / "indicate_ClickSquareToStart.png"
         )
-        self.check_your_turn_path = str(self.resources_images_dir / "indicate_YourTurn.png")
+        self.check_your_turn_path = str(
+            self.resources_images_dir / "indicate_YourTurn.png"
+        )
         self.check_go_back_path = str(self.resources_images_dir / "indicate_GoBack.png")
         self.check_win_path = str(self.resources_images_dir / "indicate_Win.png")
         self.check_lose_path = str(self.resources_images_dir / "indicate_Lost.png")

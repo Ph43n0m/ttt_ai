@@ -1,11 +1,6 @@
 from abc import ABC
-from collections import deque
 
 from ttt_ai.game.field import FieldState
-
-MAX_MEMORY = 100_000
-BATCH_SIZE = 1000
-LR = 0.001
 
 
 class Agent(ABC):
@@ -18,8 +13,6 @@ class Agent(ABC):
         self.games_draw = 0
         self.reward = 0
         self.epsilon = randomness  # randomness
-        self.gamma = 0.9  # discount rate
-        self.memory = deque(maxlen=MAX_MEMORY)  # popleft()
 
     def get_game_count(self) -> int:
         """Get the number of games played."""
