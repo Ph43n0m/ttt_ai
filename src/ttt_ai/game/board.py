@@ -192,5 +192,5 @@ class Board:
         Returns:
             list[FieldState]: A flattened list of field states.
         """
-        state_map = {"-": 0, "X": 1, "O": 2}
+        state_map = {"-": 0, "X": 1, "O": 2}  # TODO: check if -1 / 0 / 1 is better
         return [state_map[field.state.value] for row in self.fields for field in row]

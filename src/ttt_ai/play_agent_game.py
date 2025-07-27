@@ -14,13 +14,22 @@ class PlayAgentGame:
         project_root = Path(__file__).parent.parent.parent
         resources_models_dir = project_root / "assets" / "resources" / "models"
         resources_models_dir.mkdir(parents=True, exist_ok=True)
-        self.resource_model_file_v1 = resources_models_dir / "nn_agent_v1_weights.pth"
-        self.resource_model_file_v2 = resources_models_dir / "nn_agent_v2_weights.pth"
+        self.resource_model_file_v1 = resources_models_dir / "nn_agent_v1_weights.pt"
+        self.resource_model_file_v2 = resources_models_dir / "nn_agent_v2_weights.pt"
         self.maximum_games = maximum_games
         self.agents = agents
         self.board = Board()
 
         for agent in self.agents:
+            if isinstance(agent, NNAgent):
+                if isinstance(agent.model, NNModel_V1):
+                    if self.resource_model_file_v1.exists():
+                        agent.load_weights(str(self.resource_model_file_v1))
+                elif isinstance(agent.model, NNModel_V2):
+                    if self.resource_model_file_v2.exists():
+                        agent.load_weights(str(self.resource_model_file_v2))
+
+        """for agent in self.agents:
             if isinstance(agent, NNAgent):
                 if isinstance(agent.model, NNModel_V1):
                     if not self.resource_model_file_v1.exists():
@@ -29,7 +38,7 @@ class PlayAgentGame:
                 elif isinstance(agent.model, NNModel_V2):
                     if not self.resource_model_file_v2.exists():
                         agent.save_weights(str(self.resource_model_file_v2))
-                    agent.load_weights(str(self.resource_model_file_v2))
+                    agent.load_weights(str(self.resource_model_file_v2))"""
 
     def start(self):
         plot_x_scores = []
@@ -43,13 +52,11 @@ class PlayAgentGame:
             print(f"Starting game {game_number + 1} of {self.maximum_games}.")
             # self.board.print_board()
 
-            while (
-                    not self.board.is_board_full()
-                    and not self.board.is_winner(FieldState.X)
-                    and not self.board.is_winner(FieldState.O)
-            ):
+            while not self.board.is_game_over():
                 current_agent = self.agents[n_turn % len(self.agents)]
-                best_move = current_agent.get_best_move(self.board)
+                current_agent.perform_action(self.board)
+
+                """best_move = current_agent.get_best_move(self.board)
                 # print(f"Turn {n_turn + 1} with agent {current_agent.FIELD_STATE_TYPE}.")
 
                 if best_move is not None:
@@ -63,33 +70,32 @@ class PlayAgentGame:
                             f"Invalid move by agent {current_agent.FIELD_STATE_TYPE}."
                         )
                         break
-
+                """
                 n_turn += 1
 
             print(f"Game {game_number + 1}/{self.maximum_games} completed.")
             print(
-                f"Winner is {FieldState.X if self.board.is_winner(FieldState.X) else FieldState.O}. "
+                f"Winner is {FieldState.X if self.board.is_winner(FieldState.X) else FieldState.O if self.board.is_winner(FieldState.X) else 'None'}. "
             )
             self.board.print_board()
 
             for agent in self.agents:
-                agent.update(
-                    game_won=self.board.is_winner(agent.FIELD_STATE_TYPE),
-                    game_lost=not self.board.is_winner(agent.FIELD_STATE_TYPE),
-                    game_draw=(
-                            not self.board.is_winner(FieldState.X)
-                            and not self.board.is_winner(FieldState.O)
-                    ),
-                )
-
+                agent.update_stats(self.board)
                 print(
-                    f"Game stats: {agent.FIELD_STATE_TYPE} won: {agent.games_won}, lost: {agent.games_lost}, draw: {agent.games_draw}, reward: {agent.reward}, wl_ratio: {agent.get_wl_ratio():.2f}, win_rate: {agent.get_win_rate():.2f}"
+                    f"Game stats: {agent.FIELD_STATE_TYPE} won: {agent.games_won}, lost: {agent.games_lost}, draw: {agent.games_draw}, reward: {agent.total_reward}, wl_ratio: {agent.get_wl_ratio():.2f}, win_rate: {agent.get_win_rate():.2f}, bm: {agent.n_best_move}, im: {agent.n_invalid_move}, bm/im: {(agent.n_best_move / agent.n_invalid_move):.0%}"
                 )
 
-            plot_x_scores.append(self.agents[0].reward)
-            plot_o_scores.append(self.agents[1].reward)
+                if isinstance(agent, NNAgent):
+                    if agent.total_reward > 0 and agent.total_reward == agent.record:
+                        if isinstance(agent.model, NNModel_V1):
+                            agent.save_weights(str(self.resource_model_file_v1))
+                        elif isinstance(agent.model, NNModel_V2):
+                            agent.save_weights(str(self.resource_model_file_v2))
 
-            if game_number % 10 == 0:
+            plot_x_scores.append(self.agents[0].total_reward)
+            plot_o_scores.append(self.agents[1].total_reward)
+
+            if game_number % 20 == 0:
                 plot(plot_x_scores, plot_o_scores)
 
             """ weights seems always the same, so no need to save them every time
@@ -104,12 +110,12 @@ def main():
     randomness = 0.001  # Set the randomness for the agents
 
     # agent_x = MiniMaxAgent(FieldState.X, randomness)
-    # agent_x = NNAgent(NNModel_V1(), FieldState.X, randomness)
-    agent_x = NNAgent(NNModel_V2(), FieldState.X, randomness)
+    agent_x = NNAgent(NNModel_V1(), FieldState.X, randomness)
+    # agent_x = NNAgent(NNModel_V2(), FieldState.X, randomness)
 
     # agent_o = MiniMaxAgent(FieldState.O, randomness)
-    agent_o = NNAgent(NNModel_V1(), FieldState.O, randomness)
-    # agent_o = NNAgent(NNModel_V2(), FieldState.O, randomness)
+    # agent_o = NNAgent(NNModel_V1(), FieldState.O, randomness)
+    agent_o = NNAgent(NNModel_V2(), FieldState.O, randomness)
 
     play_loop = PlayAgentGame([agent_x, agent_o], 1000000)
     play_loop.start()

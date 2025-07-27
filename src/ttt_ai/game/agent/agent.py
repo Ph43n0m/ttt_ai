@@ -11,29 +11,14 @@ class Agent(ABC):
         self.games_won = 0
         self.games_lost = 0
         self.games_draw = 0
-        self.reward = 0
+        self.total_reward = 0
         self.epsilon = randomness  # randomness
-
-    def get_game_count(self) -> int:
-        """Get the number of games played."""
-        return self.games_won + self.games_lost + self.games_draw
-
-    def update(
-            self,
-            game_won: bool = False,
-            game_lost: bool = False,
-            game_draw: bool = False,
-    ) -> None:
-        if game_draw:
-            self.reward += 1
-            self.games_draw += 1
-            return
-        if game_won:
-            self.reward += 2
-            self.games_won += 1
-        elif game_lost:
-            self.reward -= 1
-            self.games_lost += 1
+        self.record = 0
+        self.n_best_move = 0
+        self.n_invalid_move = 0
+        self.exploration_mode = (
+            True  # Flag to indicate if the agent is in exploration mode
+        )
 
     def get_wl_ratio(self) -> float:
         """Calculate the win/loss ration."""
@@ -60,5 +45,54 @@ class Agent(ABC):
             else float(0)
         )
 
-    def get_best_move(self, board) -> int | None:
+    def get_game_count(self) -> int:
+        """Get the number of games played."""
+        return self.games_won + self.games_lost + self.games_draw
+
+    def update_stats(self, board) -> None:
+        if board.is_game_over():
+            if not board.is_winner(FieldState.X) and not board.is_winner(FieldState.O):
+                self.games_draw += 1
+            elif board.is_winner(self.FIELD_STATE_TYPE):
+                self.games_won += 1
+            elif not board.is_winner(self.FIELD_STATE_TYPE):
+                self.games_lost += 1
+
+            self.total_reward += self._calculate_reward(board)
+
+    # Decrease epsilon over time to reduce exploration
+    def _get_epsilon_by_game_count(self) -> float:
+        value = (min(0.1, self.epsilon) ** 0.01) * (0.99 ** (self.get_game_count() + 1))
+        return value if value > 0.0001 else 0
+
+    def _calculate_reward(self, board) -> int:
+        """Calculate the reward based on the board."""
+        ret = 0
+        if board.is_game_over():
+            if not board.is_winner(FieldState.X) and not board.is_winner(FieldState.O):
+                ret += 1
+            elif board.is_winner(self.FIELD_STATE_TYPE):
+                ret += 2
+            elif not board.is_winner(self.FIELD_STATE_TYPE):
+                ret -= 1
+        return ret
+
+    def perform_action(self, board) -> int:
+        """Perform an action on the board and return the chosen field index."""
+        ret = -1
+
+        best_move = self._get_best_move(board)
+        if best_move is not None:
+            field = board.get_field_by_flat_index(best_move)
+            if field is not None:
+                ret = best_move
+                field.state = self.FIELD_STATE_TYPE
+            else:
+                print(f"Invalid move by agent {self.FIELD_STATE_TYPE}.")
+        else:
+            print(f"No valid move found for agent {self.FIELD_STATE_TYPE}.")
+
+        return ret
+
+    def _get_best_move(self, board) -> int | None:
         pass
