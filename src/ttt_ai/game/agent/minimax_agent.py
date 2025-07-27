@@ -13,8 +13,10 @@ class MiniMaxAgent(Agent):
             self, field_state_type: FieldState = FieldState.X, randomness: float = 0.2
     ):
         super().__init__(field_state_type, randomness)
+        if self.epsilon <= 0:
+            self.exploration_mode = False
 
-    def get_best_move(self, board) -> int | None:
+    def _get_best_move(self, board) -> int | None:
         """
         Get the best move for the current board state using the minimax algorithm.
         Args:
@@ -25,19 +27,20 @@ class MiniMaxAgent(Agent):
         """
         # Implement the minimax algorithm to find the best move
 
-        if (
-                board.is_board_full()
-                or board.is_winner(FieldState.X)
-                or board.is_winner(FieldState.O)
-        ):
+        if board.is_game_over():
             return None
 
-        if random.uniform(0, 1) < self.epsilon:
+        if (
+                self.exploration_mode
+                and random.uniform(0, 1) < self._get_epsilon_by_game_count()
+        ):
+            self.n_invalid_move += 1
             return (
                 board.get_flat_index_of_radom_free_field()
             )  # Random move if randomness condition is met
         else:
             # If randomness condition is not met, use minimax algorithm
+            self.n_best_move += 1
 
             if board.is_empty():
                 return random.choice(
