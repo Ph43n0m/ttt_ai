@@ -82,7 +82,7 @@ class PlayAgentGame:
             for agent in self.agents:
                 agent.update_stats(self.board)
                 print(
-                    f"Game stats: {agent.FIELD_STATE_TYPE} won: {agent.games_won}, lost: {agent.games_lost}, draw: {agent.games_draw}, reward: {agent.total_reward}, wl_ratio: {agent.get_wl_ratio():.2f}, win_rate: {agent.get_win_rate():.2f}, bm: {agent.n_best_move}, im: {agent.n_invalid_move}, bm/im: {(agent.n_best_move / agent.n_invalid_move):.0%}"
+                    f"Game stats: {agent.FIELD_STATE_TYPE} won: {agent.games_won}, lost: {agent.games_lost}, draw: {agent.games_draw}, reward: {agent.total_reward}, wl_ratio: {agent.get_wl_ratio():.2f}, win_rate: {agent.get_win_rate():.2f}, bm: {agent.n_best_move}, im: {agent.n_invalid_move}, bm/im: {(agent.n_best_move / agent.n_invalid_move) if agent.n_invalid_move > 0 else 1:.0%}"
                 )
 
                 if isinstance(agent, NNAgent):
@@ -95,7 +95,7 @@ class PlayAgentGame:
             plot_x_scores.append(self.agents[0].total_reward)
             plot_o_scores.append(self.agents[1].total_reward)
 
-            if game_number % 20 == 0:
+            if game_number % 10 == 0:
                 plot(plot_x_scores, plot_o_scores)
 
             """ weights seems always the same, so no need to save them every time
@@ -107,15 +107,15 @@ class PlayAgentGame:
 
 def main():
     """Main entry point for the application."""
-    randomness = 0.001  # Set the randomness for the agents
+    randomness = 0.0  # Set the randomness for the agents
 
-    # agent_x = MiniMaxAgent(FieldState.X, randomness)
-    agent_x = NNAgent(NNModel_V1(), FieldState.X, randomness)
+    agent_x = MiniMaxAgent(FieldState.X, randomness)
+    # agent_x = NNAgent(NNModel_V1(), FieldState.X, randomness)
     # agent_x = NNAgent(NNModel_V2(), FieldState.X, randomness)
 
     # agent_o = MiniMaxAgent(FieldState.O, randomness)
-    # agent_o = NNAgent(NNModel_V1(), FieldState.O, randomness)
-    agent_o = NNAgent(NNModel_V2(), FieldState.O, randomness)
+    agent_o = NNAgent(NNModel_V1(), FieldState.O, randomness)
+    # agent_o = NNAgent(NNModel_V2(), FieldState.O, randomness)
 
     play_loop = PlayAgentGame([agent_x, agent_o], 1000000)
     play_loop.start()

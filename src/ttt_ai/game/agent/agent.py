@@ -81,7 +81,7 @@ class Agent(ABC):
         """Perform an action on the board and return the chosen field index."""
         ret = -1
 
-        best_move = self._get_best_move(board)
+        best_move = self.get_best_move(board)
         if best_move is not None:
             field = board.get_field_by_flat_index(best_move)
             if field is not None:
@@ -94,5 +94,5 @@ class Agent(ABC):
 
         return ret
 
-    def _get_best_move(self, board) -> int | None:
+    def get_best_move(self, board) -> int | None:
         pass

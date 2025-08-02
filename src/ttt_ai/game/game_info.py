@@ -33,7 +33,7 @@ class GameInfo:
     def __init__(self, mouse_speed: float = 0.2) -> None:
         self.mouse_speed = mouse_speed
         self.start_next_game_sleep = 0.2
-        project_root = Path(__file__).parent.parent.parent
+        project_root = Path(__file__).parent.parent.parent.parent
         self.resources_dir = project_root / "assets" / "resources"
         self.resources_dir.mkdir(parents=True, exist_ok=True)
         self.resources_images_dir = self.resources_dir / "images"
