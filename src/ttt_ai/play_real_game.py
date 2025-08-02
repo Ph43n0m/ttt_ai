@@ -7,6 +7,7 @@ from pynput import keyboard
 
 from ttt_ai.game.agent.agent import Agent
 from ttt_ai.game.agent.minimax_agent import MiniMaxAgent
+from ttt_ai.game.field import FieldState
 
 # Add current directory to path for imports
 current_dir = Path(__file__).parent
@@ -70,15 +71,15 @@ class PlayRealGame:
 
                 if self.game_info.is_win_shown():
                     print("You won!")
-                    self.agent.update(True)
+                    self.agent.update_stats(self.game_info.board)
 
                 if self.game_info.is_lose_shown():
                     print("You lost.")
-                    self.agent.update(False, True)
+                    self.agent.update_stats(self.game_info.board)
 
                 if self.game_info.is_draw_shown():
                     print("Draw.")
-                    self.agent.update(False, False, True)
+                    self.agent.update_stats(self.game_info.board)
 
                 if self.game_info.start_next_game():
                     if self.game_count >= self.maximum_games:
@@ -130,14 +131,14 @@ class PlayRealGame:
             f"Game ({self.game_info.get_previous_game_state()} --> {self.game_info.actual_game_state}) - ({self.game_count}/{self.maximum_games})\nW: {self.agent.games_won} | L: {self.agent.games_lost} | D: {self.agent.games_draw}"
         )
         if self.game_count > 0:
-            print("Win/Loss ratio: {:.2f}".format(self.agent.get_wl_ratio()))
-            print("Win rate: {:.2f}".format(self.agent.get_win_rate()))
-            print("Agent Reward: ", self.agent.reward)
+            print(
+                f"Game stats: {self.agent.FIELD_STATE_TYPE} won: {self.agent.games_won}, lost: {self.agent.games_lost}, draw: {self.agent.games_draw}, reward: {self.agent.total_reward}, wl_ratio: {self.agent.get_wl_ratio():.2f}, win_rate: {self.agent.get_win_rate():.2f}, bm: {self.agent.n_best_move}, im: {self.agent.n_invalid_move}, bm/im: {(self.agent.n_best_move / self.agent.n_invalid_move) if self.agent.n_invalid_move > 0 else 0:.0%}"
+            )
 
 
 def main():
     """Main entry point for the application."""
-    play_loop = PlayRealGame(MiniMaxAgent(), 100)
+    play_loop = PlayRealGame(MiniMaxAgent(FieldState.X, 0), 100)
     play_loop.start()
     # play_loop.stop()
     try:
@@ -147,44 +148,6 @@ def main():
     except KeyboardInterrupt:
         print("Interrupted by user. Exiting...")
         play_loop.stop()
-
-    filenametosaveplot = str(
-        play_loop.game_info.screenshotter.screens_dir
-        / f"{play_loop.game_info.screenshotter.window_title}_result.png".replace(
-            " ", "_"
-        ).replace(":", "_")
-    )
-    # X axis parameter:
-    # xaxis = np.array([1, 2, 4, 16, 32])
-    # Y axis parameter:
-    # yaxis = np.array([1, 2, 3, 4, 5])
-    # plt.plot(xaxis, yaxis)
-    # plt.show()
-
-    t = np.array(
-        [
-            [0, 0, 0, 0],
-            [1, 1, 0, 0],
-            [2, 2, 0, 0],
-            [3, 2, 1, 0],
-            [4, 2, 1, 1],
-            [5, 2, 2, 1],
-            [6, 2, 2, 2],
-            [7, 2, 3, 2],
-            [8, 3, 3, 2],
-            [9, 3, 4, 2],
-            [10, 3, 4, 2],
-        ]
-    )
-
-    plt.style.use("dark_background")
-    plt.plot(t[:, 0], t[:, 1], ls="dashed", color="chartreuse", label="Games won")
-    plt.plot(t[:, 0], t[:, 2], ls="dashed", color="OrangeRed", label="Games lost")
-    plt.plot(t[:, 0], t[:, 3], ls="dotted", color="silver", label="Games draw")
-
-    plt.legend()
-    # plt.show()
-    # plt.savefig(filenametosaveplot)
 
 
 if __name__ == "__main__":

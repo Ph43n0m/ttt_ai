@@ -123,7 +123,7 @@ class NNAgent(Agent):
             if self.total_reward > self.record:
                 self.record = self.total_reward
 
-    def _get_best_move(self, board) -> int | None:
+    def get_best_move(self, board) -> int | None:
         """Get the next move for the current board state using a neural network.
         Args:
             board: The current state of the Tic Tac Toe board.

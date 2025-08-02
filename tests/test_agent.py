@@ -2,7 +2,6 @@ import unittest
 
 from pyautogui import Point
 
-from ttt_ai.game.agent.agent import Agent
 from ttt_ai.game.agent.minimax_agent import MiniMaxAgent
 from ttt_ai.game.board import Board
 from ttt_ai.game.field import FieldState
@@ -12,18 +11,16 @@ class TestMiniMaxAgent(unittest.TestCase):
     def setUp(self):
         self.agent = MiniMaxAgent(FieldState.X, 0)
         self.board = Board()
+        self.test_point = Point(100, 100)
 
     def test_get_best_move_empty_board(self):
         self._generate_board(full_board=False)
+        self.board.get_field_by_flat_index(0).location = self.test_point
         best_move = self.agent.get_best_move(self.board)
         self.assertIsNotNone(
             best_move, "Best move should be not None on an empty board."
         )
-        self.assertIn(
-            best_move,
-            [0, 2, 6, 8],
-            "Best move should be a corner (0, 2, 6, or 8) on an empty board.",
-        )
+        self.assert_best_move_for_board(0)
 
     def test_get_best_move_full_board(self):
         self._generate_board(full_board=True)
@@ -46,7 +43,34 @@ class TestMiniMaxAgent(unittest.TestCase):
         This test assumes that the agent can correctly identify the best move in a non-terminal state.
         """
         target_field = 0
-        test_point = Point(100, 100)
+
+        self.board.print_board()
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
+        self.assert_best_move_for_board(target_field)
+
+        # Simulate another partial board state
+        self._generate_board(full_board=False)
+        target_field = 6
+        self.board[0, 0].state = FieldState.X
+        self.board[0, 1].state = FieldState.O
+        self.board[1, 0].state = FieldState.X
+        self.board[1, 1].state = FieldState.O
+
+        self.board.print_board()
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
+        self.assert_best_move_for_board(target_field)
+
+        # Simulate another partial board state
+        self._generate_board(full_board=False)
+        target_field = 7
+        self.board[0, 0].state = FieldState.X
+        self.board[0, 1].state = FieldState.O
+        self.board[0, 2].state = FieldState.X
+        self.board[1, 1].state = FieldState.O
+
+        self.board.print_board()
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
+        self.assert_best_move_for_board(target_field)
 
         # Simulate a partial board state
         self._generate_board(full_board=False)
@@ -56,9 +80,9 @@ class TestMiniMaxAgent(unittest.TestCase):
         self.board[1, 1].state = FieldState.O
 
         self.board.print_board()
-        self.board.get_field_by_flat_index(target_field).location = test_point
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
 
-        self.assert_best_move_for_board(target_field, test_point)
+        self.assert_best_move_for_board(target_field)
 
         # Simulate another partial board state
         self._generate_board(full_board=False)
@@ -69,39 +93,32 @@ class TestMiniMaxAgent(unittest.TestCase):
         self.board[2, 2].state = FieldState.X
 
         self.board.print_board()
-
-        self.board.get_field_by_flat_index(target_field).location = test_point
-
-        self.assert_best_move_for_board(target_field, test_point)
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
+        self.assert_best_move_for_board(target_field)
 
         # Simulate another partial board state
-        target_field = 3
+        target_field = 1
         self.board[0, 0].state = FieldState.X
 
         self.board.print_board()
-
-        self.board.get_field_by_flat_index(target_field).location = test_point
-
-        self.assert_best_move_for_board(target_field, test_point)
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
+        self.assert_best_move_for_board(target_field)
 
         # Simulate another partial board state
         self.board[1, 0].state = FieldState.O
         target_field = 4
 
         self.board.print_board()
+        self.board.get_field_by_flat_index(target_field).location = self.test_point
+        self.assert_best_move_for_board(target_field)
 
-        self.board.get_field_by_flat_index(target_field).location = test_point
-
-        self.assert_best_move_for_board(target_field, test_point)
-
-    def assert_best_move_for_board(self, target_field, test_point=Point(100, 100)):
+    def assert_best_move_for_board(self, target_field):
         """
         Helper function to assert the best move for a given board state.
         Args:
             board (Board): The board instance to test.
             target_field (int): The expected best move field index.
             :param target_field:
-            :param test_point:
         """
         best_move = self.agent.get_best_move(self.board)
         self.assertEqual(
@@ -109,7 +126,7 @@ class TestMiniMaxAgent(unittest.TestCase):
         )
         self.assertEqual(
             self.board.get_field_by_flat_index(best_move).location,
-            test_point,
+            self.test_point,
             "Field must have a specific location.",
         )
 
@@ -145,7 +162,7 @@ class TestMiniMaxAgent(unittest.TestCase):
 
 class TestAgentWinRate(unittest.TestCase):
     def setUp(self):
-        self.agent = Agent()
+        self.agent = MiniMaxAgent(FieldState.X, 0)
 
     def test_get_win_rate(self):
         print("Testing win rate with no games played.")
@@ -196,7 +213,7 @@ class TestAgentWinRate(unittest.TestCase):
 
 class TestPlayWinLossRatio(unittest.TestCase):
     def setUp(self):
-        self.agent = Agent()
+        self.agent = MiniMaxAgent(FieldState.X, 0)
 
     def test_get_wl_ratio(self):
         self.agent.games_draw = 5  # draws will not affect the win/loss ratio! So we set it to 5 to make sure it does not affect the tests.

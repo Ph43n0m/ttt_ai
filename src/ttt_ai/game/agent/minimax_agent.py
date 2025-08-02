@@ -16,7 +16,7 @@ class MiniMaxAgent(Agent):
         if self.epsilon <= 0:
             self.exploration_mode = False
 
-    def _get_best_move(self, board) -> int | None:
+    def get_best_move(self, board) -> int | None:
         """
         Get the best move for the current board state using the minimax algorithm.
         Args:
@@ -43,9 +43,7 @@ class MiniMaxAgent(Agent):
             self.n_best_move += 1
 
             if board.is_empty():
-                return random.choice(
-                    [0, 2, 8]
-                )  # pick a random corner as the first move except 6
+                return 0  # If the board is empty, return the first move
 
             best_score = float("-inf")
             best_move = None
@@ -55,9 +53,7 @@ class MiniMaxAgent(Agent):
                         # Make the move
                         board[row, col].state = self.FIELD_STATE_TYPE
                         score = self._minimax(
-                            board,
-                            0,
-                            False if self.FIELD_STATE_TYPE == FieldState.X else True,
+                            board, 0, False  # Start with the opponent's turn
                         )
                         # Undo the move
                         board[row, col].state = FieldState.EMPTY
@@ -82,19 +78,20 @@ class MiniMaxAgent(Agent):
         if board.is_board_full():
             return 0
         elif board.is_winner(self.FIELD_STATE_TYPE):
-            return float("inf")
+            return +1
         elif board.is_winner(
-                FieldState.O if not self.FIELD_STATE_TYPE == FieldState.X else FieldState.X
+                FieldState.O if self.FIELD_STATE_TYPE == FieldState.X else FieldState.X
         ):
-            return float("-inf")
+            return -1
 
         if depth >= 7:  # Limit the depth to prevent excessive recursion
             print(f"Critical depth of {depth} reached, returning 0")
             return 0
 
         # Recursive case: explore all possible moves
-        if is_maximizing:
-            best_score = -1000
+        if is_maximizing:  # Maximizing player's turn
+            # Maximizing player is the agent with FIELD_STATE_TYPE
+            best_score = float("-inf")
             for row in range(board.BOARD_SIZE):
                 for col in range(board.BOARD_SIZE):
                     if board[row, col].state == FieldState.EMPTY:
@@ -103,14 +100,15 @@ class MiniMaxAgent(Agent):
                         board[row, col].state = FieldState.EMPTY
                         best_score = max(score, best_score)
             return best_score
-        else:
-            best_score = 1000
+        else:  # Minimizing player's turn
+            # The opponent's turn, which is minimizing the score
+            best_score = float("inf")
             for row in range(board.BOARD_SIZE):
                 for col in range(board.BOARD_SIZE):
                     if board[row, col].state == FieldState.EMPTY:
                         board[row, col].state = (
                             FieldState.O
-                            if not self.FIELD_STATE_TYPE == FieldState.X
+                            if self.FIELD_STATE_TYPE == FieldState.X
                             else FieldState.X
                         )
                         score = self._minimax(board, depth + 1, True)
