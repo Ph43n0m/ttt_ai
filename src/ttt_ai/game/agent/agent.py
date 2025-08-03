@@ -5,7 +5,7 @@ from ttt_ai.game.field import FieldState
 
 class Agent(ABC):
     def __init__(
-            self, field_state_type: FieldState = FieldState.X, randomness: float = 0.1
+        self, field_state_type: FieldState = FieldState.X, randomness: float = 0.1
     ):
         self.FIELD_STATE_TYPE = field_state_type
         self.games_won = 0
@@ -16,9 +16,6 @@ class Agent(ABC):
         self.record = 0
         self.n_best_move = 0
         self.n_invalid_move = 0
-        self.exploration_mode = (
-            True  # Flag to indicate if the agent is in exploration mode
-        )
 
     def get_wl_ratio(self) -> float:
         """Calculate the win/loss ration."""
@@ -65,7 +62,7 @@ class Agent(ABC):
         value = (min(0.1, self.epsilon) ** 0.01) * (0.99 ** (self.get_game_count() + 1))
         return value if value > 0.0001 else 0
 
-    def _calculate_reward(self, board) -> int:
+    def _calculate_reward(self, board) -> float:
         """Calculate the reward based on the board."""
         ret = 0
         if board.is_game_over():

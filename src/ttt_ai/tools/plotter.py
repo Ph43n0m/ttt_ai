@@ -22,4 +22,4 @@ def plot(x_scores, o_scores):
     plt.text(len(x_scores) - 1, x_scores[-1], "X: " + str(x_scores[-1]))
     plt.text(len(o_scores) - 1, o_scores[-1], "O: " + str(o_scores[-1]))
     plt.show(block=False)
-    plt.pause(0.01)
+    plt.pause(0.03)

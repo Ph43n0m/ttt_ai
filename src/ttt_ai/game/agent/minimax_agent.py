@@ -10,11 +10,9 @@ class MiniMaxAgent(Agent):
     """
 
     def __init__(
-            self, field_state_type: FieldState = FieldState.X, randomness: float = 0.2
+        self, field_state_type: FieldState = FieldState.X, randomness: float = 0.2
     ):
         super().__init__(field_state_type, randomness)
-        if self.epsilon <= 0:
-            self.exploration_mode = False
 
     def get_best_move(self, board) -> int | None:
         """
@@ -30,10 +28,7 @@ class MiniMaxAgent(Agent):
         if board.is_game_over():
             return None
 
-        if (
-                self.exploration_mode
-                and random.uniform(0, 1) < self._get_epsilon_by_game_count()
-        ):
+        if random.uniform(0, 1) < self._get_epsilon_by_game_count():
             self.n_invalid_move += 1
             return (
                 board.get_flat_index_of_radom_free_field()
@@ -80,7 +75,7 @@ class MiniMaxAgent(Agent):
         elif board.is_winner(self.FIELD_STATE_TYPE):
             return +1
         elif board.is_winner(
-                FieldState.O if self.FIELD_STATE_TYPE == FieldState.X else FieldState.X
+            FieldState.O if self.FIELD_STATE_TYPE == FieldState.X else FieldState.X
         ):
             return -1
 
