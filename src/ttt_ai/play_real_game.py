@@ -6,7 +6,9 @@ from time import sleep
 from pynput import keyboard
 
 from ttt_ai.game.agent.agent import Agent
-from ttt_ai.game.agent.minimax_agent import MiniMaxAgent
+from ttt_ai.game.agent.model.NNModel_V1 import NNModel_V1
+from ttt_ai.game.agent.model.NNModel_V2 import NNModel_V2
+from ttt_ai.game.agent.nn_agent import NNAgent
 from ttt_ai.game.field import FieldState
 
 # Add current directory to path for imports
@@ -14,8 +16,6 @@ current_dir = Path(__file__).parent
 sys.path.insert(0, str(current_dir))
 
 from ttt_ai.game.game_info import GameInfo
-import matplotlib.pyplot as plt
-import numpy as np
 
 
 class PlayRealGame:
@@ -28,6 +28,20 @@ class PlayRealGame:
         self.stop_event = threading.Event()
         self.game_count = 0
         self.maximum_games = maximum_games
+        project_root = Path(__file__).parent.parent.parent
+        resources_models_dir = project_root / "assets" / "resources" / "models"
+        self.resource_model_file_v1 = resources_models_dir / "nn_agent_v1_weights.pt"
+        self.resource_model_file_v2 = resources_models_dir / "nn_agent_v2_weights.pt"
+
+        if isinstance(agent, NNAgent):
+            if isinstance(agent.model, NNModel_V1):
+                if not self.resource_model_file_v1.exists():
+                    agent.save_weights(str(self.resource_model_file_v1))
+                agent.load_weights(str(self.resource_model_file_v1), False)
+            elif isinstance(agent.model, NNModel_V2):
+                if not self.resource_model_file_v2.exists():
+                    agent.save_weights(str(self.resource_model_file_v2))
+                agent.load_weights(str(self.resource_model_file_v2), False)
 
     def start(self):
         """Start the hotkey listener and the screenshot loop."""
@@ -138,7 +152,9 @@ class PlayRealGame:
 
 def main():
     """Main entry point for the application."""
-    play_loop = PlayRealGame(MiniMaxAgent(FieldState.X, 0), 100)
+
+    # play_loop = PlayRealGame(MiniMaxAgent(FieldState.X, 0), 100)
+    play_loop = PlayRealGame(NNAgent(NNModel_V2(), FieldState.X, 0), 100)
     play_loop.start()
     # play_loop.stop()
     try:

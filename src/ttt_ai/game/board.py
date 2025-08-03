@@ -140,9 +140,9 @@ class Board:
             bool: True if the game is over, False otherwise.
         """
         return (
-                self.is_board_full()
-                or self.is_winner(FieldState.X)
-                or self.is_winner(FieldState.O)
+            self.is_board_full()
+            or self.is_winner(FieldState.X)
+            or self.is_winner(FieldState.O)
         )
 
     def is_winner(self, player: FieldState) -> bool:
@@ -192,5 +192,5 @@ class Board:
         Returns:
             list[FieldState]: A flattened list of field states.
         """
-        state_map = {"-": 0, "X": 1, "O": 2}  # TODO: check if -1 / 0 / 1 is better
+        state_map = {"-": -1, "X": 0, "O": 1}
         return [state_map[field.state.value] for row in self.fields for field in row]
